@@ -1,0 +1,23 @@
+[template consumable]
+type = item
+subtype = consumable
+uses = 1
+effect = [health, -100]
+weight = 23.5
+desc = "A consumable."
+
+[template equipment]
+type = item
+subtype = equipment
+attack = 3000
+defense = 2
+weight = 100.4
+desc = "A piece of equipment."
+
+[template key]
+type = item
+subtype = key
+desc = "A key item."
+
+
+

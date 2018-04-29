@@ -1,0 +1,78 @@
+[Left Leg]
+name = Left Leg
+desc = The leg attatched to the left side of the body.
+type = bodypart
+subtype = bodypart
+
+
+[Right Leg]
+name = Right Leg
+desc = The leg attatched to the right side of the body.
+type = bodypart
+subtype = bodypart
+
+
+[Head]
+name = Head
+desc = The head. A brain generally goes here.
+
+type = bodypart
+subtype = bodypart
+
+
+[Left Arm]
+name = Left Arm
+desc = An arm residing on the left side of the body.
+type = bodypart
+subtype = bodypart
+
+
+[Right Arm]
+name = Right Arm
+desc = An arm sitting upon the right side of the body.
+type = bodypart
+subtype = bodypart
+
+
+[Torso]
+name = Torso
+desc = The mid-section of the body.
+type = bodypart
+subtype = bodypart
+
+
+[Right Hand]
+name = Right Hand
+desc = It's a hand attatch to the right arm.
+type = bodypart
+subtype = bodypart
+
+
+[Left Hand]
+name = Left Hand
+desc = The hand connected to the left arm.
+type = bodypart
+subtype = bodypart
+
+
+[Left Foot]
+name = Left Foot
+desc = A foot. It's the left one.
+type = bodypart
+subtype = bodypart
+
+
+[Right Foot]
+name = Right Foot
+desc = A right foot; not the wrong one.
+type = bodypart
+subtype = bodypart
+
+
+[Tail]
+name = Tail
+desc = A long thing.
+type = bodypart
+subtype = bodypart
+
+

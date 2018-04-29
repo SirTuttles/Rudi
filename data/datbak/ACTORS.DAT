@@ -1,0 +1,23 @@
+[template enemy]
+type = actor
+subtype = enemy
+health = 100
+equipped = []
+bag = []
+desc = "An enemy actor."
+
+[template friendly]
+type = actor
+subtype = friendly
+health = 100
+equipped = []
+bag = []
+desc = "A friendly actor."
+
+[template party]
+type = actor
+subtype = party
+health = 100
+equipped = []
+bag = []
+desc = "A party actor."

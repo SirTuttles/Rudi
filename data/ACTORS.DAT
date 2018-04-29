@@ -1,0 +1,42 @@
+[template enemy]
+type = actor
+subtype = friendly
+health = 100
+equipped = []
+bag = []
+desc = An enemy actor.
+name = template enemy
+bodyparts = [Head,Left Arm,Right Arm,Left Hand,Right Hand,Torso,Left Leg,Right Leg,Left Foot,Right Foot,]
+
+
+[template friendly]
+type = actor
+subtype = friendly
+health = 100
+equipped = []
+bag = []
+desc = An friendly actor.
+bodyparts = [Head,Left Arm,Right Arm,Left Hand,Right Hand,Torso,Left Leg,Right Leg,Left Foot,Right Foot,]
+
+
+[template party]
+type = actor
+subtype = friendly
+health = 100
+equipped = []
+bag = []
+desc = An party actor.
+bodyparts = [Head,Left Arm,Right Arm,Left Hand,Right Hand,Torso,Left Leg,Right Leg,Left Foot,Right Foot,]
+
+
+[Burnt]
+name = Burnt
+desc = Thrashing away, as per usual.
+
+health = 100
+equipped = [template equipment,]
+bodyparts = [Head,Left Leg,]
+type = actor
+subtype = friendly
+
+

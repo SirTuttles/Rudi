@@ -1,0 +1,9 @@
+[template room]
+type = room
+items = [template key,]
+actors = []
+desc = A template for a room
+distant = A template for a room is seen in the distance
+subtype = room
+
+
