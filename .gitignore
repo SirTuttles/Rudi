@@ -1,3 +1,6 @@
+# Custom file types
+*.agenda
+
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]

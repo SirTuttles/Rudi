@@ -426,7 +426,9 @@ class RoomMapper(tk.Toplevel):
      
     def select(self, point):
             self.remove_unsaved()
-            self.deselect_all()
+            if self.selected_room != None:
+                self.selected_room.deselect()
+                
             selected = False
             id = 0
             for bpoint in self.bpoints:
@@ -446,9 +448,8 @@ class RoomMapper(tk.Toplevel):
                 roombox = self.getRoomByID(id)
             else:
                 roombox = RoomBox(self.canvas, selected, id, self.grid_size)
-            
+                self.boxes.append(roombox)
             roombox.select()
-            self.boxes.append(roombox)
             self.selected_room = roombox
            
      
@@ -531,10 +532,10 @@ class RoomBox(object):
         
     def save(self):
         self.saved = True
-        self.fill = 'pink'
+        self.fill = 'darkblue'
         self.outline = 'lightgreen'
         self.canvas.itemconfig(self.rec, outline=self.outline, fill=self.fill)
-        
+        self.select()
     
     def unsave(self):
         self.saved = False
