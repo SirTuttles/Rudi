@@ -213,9 +213,7 @@ class RoomMapper(tk.Toplevel):
         self.gridlines = []
         canvas_width = 2000
         canvas_height = 2000
-
         self.zoom_step = canvas_width / self.grid_size
-        
         self.canvas = tk.Canvas(self, width=canvas_width,
             height=canvas_height, highlightthickness=0, background='blue')
         self.width = self.canvas.winfo_reqwidth()
@@ -235,26 +233,46 @@ class RoomMapper(tk.Toplevel):
         self.stopcode_checkMove = None
         self.mouse_position = self.getMousePos()
         
-        # Information Display
+        self.selected_room = None
+        # Create room info panel
+        self.grid_columnconfigure(1, weight=1)
+        self.i_panel = tk.Frame(self)
+        self.i_panel.grid(row=0, column=1, stick='en')
+        
+        self.i_room = SelectionField(
+            self.i_panel,
+            datpaths=[data_path + '\ROOMS.DAT'],
+            value_name='Room',
+            g_type='Room', g_subtype='Room'
+            )
+        self.i_room.grid(row=0, column=0)
+        
+        self.i_save = tk.Button(self.i_panel, text='Save', command=self.save_selected)
+        self.i_save.grid(row=1, column=0)
+        
+        # stat Display
+        self.s_panel = tk.Frame(self, bg='black')
+        self.s_panel.grid(row=0, column=0, stick='w')
+        
         self.text_gridsize_var = tk.StringVar()
-        self.text_gridsize = tk.Label(self, 
+        self.text_gridsize = tk.Label(self.s_panel, 
             textvariable=self.text_gridsize_var, bg='black', fg='white')
         self.text_gridsize.grid(row=0, column=0, stick='w') 
         
         self.text_boxCount_var = tk.StringVar()
-        self.text_boxCount = tk.Label(self,
+        self.text_boxCount = tk.Label(self.s_panel,
             textvariable=self.text_boxCount_var, bg='black', fg='white')
         self.text_boxCount.grid(row=1, column=0, stick='w') 
         
         self.text_bPointCount_var = tk.StringVar()
-        self.text_bPointCount = tk.Label(self,
+        self.text_bPointCount = tk.Label(self.s_panel,
             textvariable=self.text_bPointCount_var, bg='black', fg='white')
         self.text_bPointCount.grid(row=2, column=0, stick='w')
         
         self.text_canvasDim_var = tk.StringVar()
-        self.text_canvasDim = tk.Label(self,
+        self.text_canvasDim = tk.Label(self.s_panel,
             textvariable=self.text_canvasDim_var, bg='black', fg='white')
-        self.text_canvasDim.grid(row=3, column=0)
+        self.text_canvasDim.grid(row=3, column=0, stick='w')
         self._update_info()
             
     def _update_info(self):
@@ -289,6 +307,7 @@ class RoomMapper(tk.Toplevel):
         x, y = self.getMousePos()
         dx = abs(x - self.mouse_position[0])
         dy = abs(y - self.mouse_position[1])
+        
         # Check if enough distance made to iniitiate move
         if dx > 10 or dy > 10:
             self.after_cancel(self.stopcode_checkMove)
@@ -381,10 +400,33 @@ class RoomMapper(tk.Toplevel):
         for d in delete_these:
             del(self.boxes[d])
                 
-                
-  
+    def save_selected(self):
+        if self.selected_room != None:
+            pass
+        else:
+            return self.selected_room
+        self.selected_room.save()
+        
+      
+    def check_saved(self, id):
+        for roombox in self.boxes:
+            if roombox.getID() == id:
+                return True
+        return False
+     
+    def getRoomByID(self, id):
+        for roombox in self.boxes:
+            if roombox.getID() == id:
+                return roombox
+        return False
+     
+    def deselect_all(self):
+        for roombox in self.boxes:
+            roombox.deselect()
+     
     def select(self, point):
             self.remove_unsaved()
+            self.deselect_all()
             selected = False
             id = 0
             for bpoint in self.bpoints:
@@ -399,9 +441,15 @@ class RoomMapper(tk.Toplevel):
                 pass
             else:
                 return False
-            roombox = RoomBox(self.canvas, selected, id, self.grid_size)
+                
+            if self.check_saved(id):
+                roombox = self.getRoomByID(id)
+            else:
+                roombox = RoomBox(self.canvas, selected, id, self.grid_size)
+            
             roombox.select()
             self.boxes.append(roombox)
+            self.selected_room = roombox
            
      
     def getMousePos(self):
@@ -415,7 +463,6 @@ class RoomMapper(tk.Toplevel):
         
 class RoomBox(object):
     def __init__(self, canvas, bPoint, id, size=20, fill='blue', outline='white'):
-        self.saved = False
         self.id = id
         self.canvas = canvas
         self.bPoint = bPoint
@@ -424,6 +471,16 @@ class RoomBox(object):
         self.outline = outline
         self.rec = canvas.create_rectangle(*bPoint, fill=fill, outline=outline)
         self.selected = False
+        
+        # Room attributes
+        self.saved = False
+        self.room = None
+        self.entrances = {
+            'north':'none',
+            'south':'none',
+            'east':'none',
+            'west':'none'
+            }
         
     def isSaved(self):
         return self.saved
@@ -453,11 +510,11 @@ class RoomBox(object):
         self.canvas.move(self.rec, dx, dy)
         
     def select(self):
-        self.canvas.itemconfig(self.rec, outline='white')
+        self.canvas.itemconfig(self.rec, fill=self.fill, outline='white')
         self.selected = True
     
     def deselect(self):
-        self.canvas.itemconfig(self.rec, outline=self.outline)
+        self.canvas.itemconfig(self.rec, fill=self.fill, outline=self.outline)
         self.selected = False
         
     def setbPoint(self, bPoint):
@@ -474,6 +531,10 @@ class RoomBox(object):
         
     def save(self):
         self.saved = True
+        self.fill = 'pink'
+        self.outline = 'lightgreen'
+        self.canvas.itemconfig(self.rec, outline=self.outline, fill=self.fill)
+        
     
     def unsave(self):
         self.saved = False
