@@ -404,7 +404,8 @@ class RoomMapper(tk.Toplevel):
         if self.selected_room != None:
             pass
         else:
-            return self.selected_room
+            return None
+        self.selected_room.setRoom(self.i_room.getValue())
         self.selected_room.save()
         
       
@@ -449,7 +450,9 @@ class RoomMapper(tk.Toplevel):
             else:
                 roombox = RoomBox(self.canvas, selected, id, self.grid_size)
                 self.boxes.append(roombox)
+            
             roombox.select()
+            self.i_room.set(roombox.getRoom())
             self.selected_room = roombox
            
      
@@ -495,6 +498,9 @@ class RoomBox(object):
     def getSize(self):
         return self.size
     
+    def getRoom(self):
+        return self.room
+    
     def setFill(self, color):
         self.canvas.itemconfig(self.rec, fill=color)
         
@@ -521,6 +527,9 @@ class RoomBox(object):
     def setbPoint(self, bPoint):
         self.bPoint = bPoint
         self.canvas.coords(self.rec, *bPoint)
+        
+    def setRoom(self, room):
+        self.room = room
         
     def redraw(self):
         self.canvas.delete(self.rec)
