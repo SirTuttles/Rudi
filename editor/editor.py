@@ -234,11 +234,11 @@ class RoomMapper(tk.Toplevel):
         self.mouse_position = self.getMousePos()
         
         self.selected_room = None
-        # Create room info panel
+        
+        # Room info panel
         self.grid_columnconfigure(1, weight=1)
         self.i_panel = tk.Frame(self)
         self.i_panel.grid(row=0, column=1, stick='en')
-        
         self.i_room = SelectionField(
             self.i_panel,
             datpaths=[data_path + '\ROOMS.DAT'],
@@ -247,8 +247,32 @@ class RoomMapper(tk.Toplevel):
             )
         self.i_room.grid(row=0, column=0)
         
+        self.i_eNorth = SelectionField(
+            self.i_panel,
+            options=['No', 'Yes'],
+            value_name='N exit')
+        self.i_eNorth.grid(row=2, column=0)   
+        
+        self.i_eSouth = SelectionField(
+            self.i_panel,
+            options=['No', 'Yes'],
+            value_name='S exit')
+        self.i_eSouth.grid(row=3, column=0)  
+        
+        self.i_eEast = SelectionField(
+            self.i_panel,
+            options=['No', 'Yes'],
+            value_name='E exit')
+        self.i_eEast.grid(row=4, column=0)  
+        
+        self.i_eWest = SelectionField(
+            self.i_panel,
+            options=['No', 'Yes'],
+            value_name='W exit')
+        self.i_eWest.grid(row=5, column=0)  
+        
         self.i_save = tk.Button(self.i_panel, text='Save', command=self.save_selected)
-        self.i_save.grid(row=1, column=0)
+        self.i_save.grid(row=6, column=0)
         
         # stat Display
         self.s_panel = tk.Frame(self, bg='black')
@@ -274,7 +298,8 @@ class RoomMapper(tk.Toplevel):
             textvariable=self.text_canvasDim_var, bg='black', fg='white')
         self.text_canvasDim.grid(row=3, column=0, stick='w')
         self._update_info()
-            
+
+        
     def _update_info(self):
         self.text_gridsize_var.set('Gridsize: %s' % self.grid_size)
         self.text_boxCount_var.set('Boxes: %s' % len(self.boxes))
@@ -405,10 +430,34 @@ class RoomMapper(tk.Toplevel):
             pass
         else:
             return None
+        # Assign room gob to be associated with
         self.selected_room.setRoom(self.i_room.getValue())
-        self.selected_room.save()
         
-      
+        # Assign avaialble exits
+        n = self.i_eNorth.getValue()
+        s = self.i_eSouth.getValue()
+        e = self.i_eEast.getValue()
+        w = self.i_eWest.getValue()
+        
+        self.selected_room.setExits(n=n, s=s, e=e, w=w)
+        self.selected_room.save()
+    
+    def load_selected(self):
+        self.i_room.set(self.selected_room.getRoom())
+        
+        exits = self.selected_room.getExits()
+        # Convert True/False to Yes/No
+        for exit in exits:
+            if exits[exit] == True:
+                exits[exit] = 'Yes'
+            elif exits[exit] == False:
+                exits[exit] = 'No'
+        
+        self.i_eNorth.set(exits['north'])
+        self.i_eSouth.set(exits['south'])
+        self.i_eEast.set(exits['east'])
+        self.i_eWest.set(exits['west'])
+
     def check_saved(self, id):
         for roombox in self.boxes:
             if roombox.getID() == id:
@@ -452,9 +501,8 @@ class RoomMapper(tk.Toplevel):
                 self.boxes.append(roombox)
             
             roombox.select()
-            self.i_room.set(roombox.getRoom())
             self.selected_room = roombox
-           
+            self.load_selected()
      
     def getMousePos(self):
         x = self.winfo_pointerx() - self.winfo_rootx()
@@ -466,24 +514,46 @@ class RoomMapper(tk.Toplevel):
         
         
 class RoomBox(object):
-    def __init__(self, canvas, bPoint, id, size=20, fill='blue', outline='white'):
+    def __init__(self, canvas, bPoint, id, size=20, fill='blue', outline='red'):
         self.id = id
         self.canvas = canvas
         self.bPoint = bPoint
         self.size = size
         self.fill = fill
         self.outline = outline
-        self.rec = canvas.create_rectangle(*bPoint, fill=fill, outline=outline)
         self.selected = False
         
         # Room attributes
         self.saved = False
         self.room = None
-        self.entrances = {
-            'north':'none',
-            'south':'none',
-            'east':'none',
-            'west':'none'
+        self.exits = {
+            'north':False,
+            'south':False,
+            'east':False,
+            'west':False
+            }
+        
+        # {map:entrance}
+        self.map_exit = False
+        
+        # Walls
+        x, y, x2, y2 = bPoint[0], bPoint[1], bPoint[2], bPoint[3]
+        self.rec = canvas.create_rectangle(x+1, y+1, x2, y2, fill=fill, outline='')
+        wNorth = self.canvas.create_rectangle(x+1, y+1, x2, y+3, fill=self.outline, outline='')
+        wSouth = self.canvas.create_rectangle(x+1, y2, x2, y2-2, fill=self.outline, outline='')
+        wEast = self.canvas.create_rectangle(x2, y+1, x2-2, y2, fill=self.outline, outline='')
+        wWest = self.canvas.create_rectangle(x+1, y+1, x+3, y2, fill=self.outline, outline='')
+        self.walls = {
+            'north':wNorth,
+            'south':wSouth,
+            'east':wEast,
+            'west':wWest
+            }
+        self.walls_fill = {
+            'north':self.outline,
+            'south':self.outline,
+            'east':self.outline,
+            'west':self.outline
             }
         
     def isSaved(self):
@@ -501,32 +571,117 @@ class RoomBox(object):
     def getRoom(self):
         return self.room
     
+    def getExits(self):
+        return self.exits
+    
     def setFill(self, color):
         self.canvas.itemconfig(self.rec, fill=color)
         
     def setOutline(self, color):
         self.canvas.itemconfig(self.rec, outline=color)
   
+    def setWallFill(self, **kw):
+        for key in kw:
+            fill = kw[key]
+            if key == 'n':
+                wall = self.walls['north']
+                self.walls_fill['north'] = fill
+                self.canvas.itemconfig(wall, fill=fill)
+            if key == 's':
+                wall = self.walls['south']
+                self.walls_fill['south'] = fill
+                self.canvas.itemconfig(wall, fill=fill)
+            if key == 'e':
+                wall = self.walls['east']
+                self.walls_fill['east'] = fill
+                self.canvas.itemconfig(wall, fill=fill)
+            if key == 'w':
+                wall = self.walls['west']
+                self.walls_fill['west'] = fill
+                self.canvas.itemconfig(wall, fill=fill)
+                
     def setSize(self, size):
+        # walls
+        for key in self.walls:
+            print('HERE')
+            wall = self.walls[key]
+            bPoint = self.canvas.coords[wall]
+            bPoint[2] += size
+            bPoint[3] += size
+            self.canvas.coords(wall, *bPoint)
+        # rec  
         bPoint = self.canvas.coords(self.rec)
         bPoint[0] += size
         bPoint[1] += size
         self.canvas.coords(self.rec, *bPoint)
-        
+    
+    def setExits(self, **kw):
+        if 'n' in kw:
+            wall = self.walls['north']
+            if kw['n'] == 'Yes':
+                self.exits['north'] = True
+                self.setWallFill(n='lightgreen')
+            elif kw['n'] == 'No':
+                self.exits['south'] = False
+                self.setWallFill(n=self.outline)
+        if 's' in kw:
+            wall = self.walls['south']
+            if kw['s'] == 'Yes':
+                self.setWallFill(s='lightgreen')
+                self.exits['south'] = True
+            elif kw['s'] == 'No':
+                self.setWallFill(s=self.outline)
+                self.exits['south'] = False
+        if 'e' in kw:
+            wall = self.walls['east']
+            if kw['e'] == 'Yes':
+                self.setWallFill(e='lightgreen')
+                self.exits['east'] = True
+            elif kw['e'] == 'No':
+                self.setWallFill(e=self.outline)
+                self.exits['east'] = False
+        if 'w' in kw:
+            wall = self.walls['west']
+            if kw['w'] == 'Yes':
+                self.setWallFill(w='lightgreen')
+                self.exits['west'] = True
+            elif kw['w'] == 'No':
+                self.setWallFill(w=self.outline)
+                self.exits['west'] = False
+                 
     def move(self, dx, dy):
         self.canvas.move(self.rec, dx, dy)
         
     def select(self):
-        self.canvas.itemconfig(self.rec, fill=self.fill, outline='white')
+        for key in self.walls:
+            wall = self.walls[key]
+            self.canvas.itemconfig(wall, fill='white')
+        self.canvas.itemconfig(self.rec, fill=self.fill)
         self.selected = True
     
     def deselect(self):
-        self.canvas.itemconfig(self.rec, fill=self.fill, outline=self.outline)
+        nFill = self.walls_fill['north']
+        sFill = self.walls_fill['south']
+        eFill = self.walls_fill['east']
+        wFill = self.walls_fill['west']
+        self.setWallFill(n=nFill, s=sFill, e=eFill, w=wFill)
+        self.canvas.itemconfig(self.rec, fill=self.fill)
         self.selected = False
         
     def setbPoint(self, bPoint):
         self.bPoint = bPoint
-        self.canvas.coords(self.rec, *bPoint)
+        x, y, x2, y2 = bPoint[0], bPoint[1], bPoint[2], bPoint[3]
+        #rec
+        self.canvas.coords(self.rec, x+1, y+1, x2, y2)
+        # walls
+        bNorth = [x+1, y+1, x2, y+3]
+        bSouth = [x+1, y2, x2, y2-2]
+        bEast = [x2, y+1, x2-2, y2]
+        bWest = [x+1, y+1, x+3, y2]
+        self.canvas.coords(self.walls['north'], *bNorth)
+        self.canvas.coords(self.walls['south'], *bSouth)
+        self.canvas.coords(self.walls['east'], *bEast)
+        self.canvas.coords(self.walls['west'], *bWest)
         
     def setRoom(self, room):
         self.room = room
@@ -538,12 +693,24 @@ class RoomBox(object):
     
     def toTop(self):
         self.canvas.tag_raise(self.rec)
-        
+        for key in self.walls:
+            wall = self.walls[key]
+            self.canvas.tag_raise(wall)
+    
     def save(self):
         self.saved = True
         self.fill = 'darkblue'
-        self.outline = 'lightgreen'
-        self.canvas.itemconfig(self.rec, outline=self.outline, fill=self.fill)
+        self.outline = 'red'
+        self.canvas.itemconfig(self.rec, fill=self.fill)
+        nFill = self.walls_fill['north']
+        sFill = self.walls_fill['south']
+        eFill = self.walls_fill['east']
+        wFill = self.walls_fill['west']
+        self.setWallFill(
+            n=nFill, 
+            s=sFill, 
+            e=eFill, 
+            w=wFill)
         self.select()
     
     def unsave(self):
@@ -551,6 +718,8 @@ class RoomBox(object):
         
     def delete(self):
         self.canvas.delete(self.rec)
+        for key in self.walls:
+            self.canvas.delete(self.walls[key])
   
 class SelectionField(Field):
     """A Field that has a tk.OptionMenu. Options will be appended to the
@@ -587,6 +756,18 @@ class SelectionField(Field):
                 label=label,
                 command=tk._setit(self.om_VAR,
                 label))
+                
+    def delete_options(self):
+        m = self.om['menu']
+        m.delete(0,'end')
+        
+    def new_options(self, options):
+        self.delete_options()
+        for option in options:
+            self.om['menu'].add_command(
+                label=labal,
+                command=tk._setit(self.om_VAR,
+                label))
         
     def getValue(self):
         """Get the value of the currently selected option in the associated
@@ -616,7 +797,8 @@ class CompoundField(Field):
     
     def __init__(self, master=None, cnf={}, **kw):
         OPTIONS = kw.pop('options', ['None'])
-        val = kw.pop('val', '')
+        OPTIONS_secondary = kw.pop('options_secondary', ['None'])
+        val = kw.pop('val', False)
         self.datpaths = kw.pop('datpaths', [])
         self.datpaths_secondary = kw.pop('datpaths_secondary', [])
         
@@ -627,35 +809,44 @@ class CompoundField(Field):
         valid_selections = kw.pop('valid_selections', [])
         
         Field.__init__(self, master, cnf, **kw)
-        
-        vals = val.split(self.sepchar)
-        assert len(vals) == 2
-            
-        val_a = vals[0]
-        val_b = vals[1]
            
         if fieldstr_a == 'entry':
             self.fa = EntryField(self)
         elif fieldstr_a == 'text':
             self.fa = TextField(self)
         elif fieldstr_a == 'selection':
-            self.fa = SelectionField(self, datpaths=self.datpaths)
+            self.fa = SelectionField(self, datpaths=self.datpaths, options = OPTIONS)
             
         if fieldstr_b == 'entry':
             self.fb = EntryField(self)
         elif fieldstr_b == 'text':
             self.fb = TextField(self)
         elif fieldstr_b == 'selection':
-            self.fb = SelectionField(self, datpaths=self.datpaths_secondary)
+            self.fb = SelectionField(self, datpaths=self.datpaths_secondary, options = OPTIONS_secondary)
         
+        if val:
+            vals = val.split(self.sepchar)
+            assert len(vals) == 2
+                
+            val_a = vals[0]
+            val_b = vals[1]
+            self.fa.set(val_a)
+            self.fb.set(val_b)
         self.fa.grid(row=0, column=0)
-        self.fa.set(val_a)
         self.fb.grid(row=0, column=1)
-        self.fb.set(val_b)
+
         
     def getValue(self):
         return self.fa.getValue() + self.sepchar + self.fb.getValue()
         
+    def update_options(self, options):
+        if isinstance(self.fa, SelectionField):
+            self.fa.new_options(options)
+    
+    def update_options_secondary(self, options):
+        if isinstance(self.fb, SelectionField):
+            self.fb.new_options(options)
+
         
 class ListWindow(tk.Toplevel):
     """A tk.Toplevel window that includes a list of values
