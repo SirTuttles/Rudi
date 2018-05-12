@@ -236,6 +236,7 @@ class RoomMapper(tk.Toplevel):
         self.selected_room = None
         
         # Room info panel
+        
         self.grid_columnconfigure(1, weight=1)
         self.i_panel = tk.Frame(self)
         self.i_panel.grid(row=0, column=1, stick='en')
@@ -245,34 +246,45 @@ class RoomMapper(tk.Toplevel):
             value_name='Room',
             g_type='Room', g_subtype='Room'
             )
+            
+        # Field list for bulk opperations
+        self.fields = []
+        
+        # Fields
         self.i_room.grid(row=0, column=0)
+        self.fields.append(self.i_room)
         
         self.i_eNorth = SelectionField(
             self.i_panel,
             options=['No', 'Yes'],
             value_name='N exit')
         self.i_eNorth.grid(row=2, column=0)   
+        self.fields.append(self.i_eNorth)
         
         self.i_eSouth = SelectionField(
             self.i_panel,
             options=['No', 'Yes'],
             value_name='S exit')
         self.i_eSouth.grid(row=3, column=0)  
+        self.fields.append(self.i_eSouth)
         
         self.i_eEast = SelectionField(
             self.i_panel,
             options=['No', 'Yes'],
             value_name='E exit')
         self.i_eEast.grid(row=4, column=0)  
+        self.fields.append(self.i_eEast)
         
         self.i_eWest = SelectionField(
             self.i_panel,
             options=['No', 'Yes'],
             value_name='W exit')
         self.i_eWest.grid(row=5, column=0)  
+        self.fields.append(self.i_eWest)
         
         self.i_save = tk.Button(self.i_panel, text='Save', command=self.save_selected)
         self.i_save.grid(row=6, column=0)
+        
         
         # stat Display
         self.s_panel = tk.Frame(self, bg='black')
@@ -522,6 +534,7 @@ class RoomBox(object):
         self.fill = fill
         self.outline = outline
         self.selected = False
+        self.coords = []
         
         # Room attributes
         self.saved = False
@@ -839,15 +852,22 @@ class CompoundField(Field):
     def getValue(self):
         return self.fa.getValue() + self.sepchar + self.fb.getValue()
         
-    def update_options(self, options):
+    def _update_options(self, options):
         if isinstance(self.fa, SelectionField):
             self.fa.new_options(options)
     
-    def update_options_secondary(self, options):
+    def _update_options_secondary(self, options):
         if isinstance(self.fb, SelectionField):
             self.fb.new_options(options)
 
+    def config(self, **kw):
+        if 'options' in kw:
+           self._update_options(kw.pop('options', ''))
+        if 'options_secondary' in kw:
+            self._update_options(kw.pop('options_secondary', ''))
         
+        self.config(kw)
+    
 class ListWindow(tk.Toplevel):
     """A tk.Toplevel window that includes a list of values
     cooresponding to a connected tk.Entry or tk.Text. Values should be able
