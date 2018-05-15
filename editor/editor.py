@@ -1,5 +1,6 @@
 import os
 import sys
+import math
 import tkinter as tk
 from tkinter.filedialog import askopenfilename, asksaveasfilename
 from tkinter import messagebox
@@ -52,11 +53,12 @@ class EntryField(Field):
     
     def __init__(self, master=None, cnf={}, **kw):
         text = kw.pop('text', '')
-        width = kw.pop('width', 50)
+        width = kw.pop('width', 17)
         Field.__init__(self, master, cnf, **kw)
         self.entry = tk.Entry(self, width=width, text=text)
         self.entry.grid(row=0, column=1, stick='ew')
-
+        self.disabled = False
+        
     def set(self, s):
         """Set the text inside the EntryField's associated tk.Entry to
         the value of the arg s supplied as an argument."""
@@ -68,6 +70,15 @@ class EntryField(Field):
         
     def getValue(self):
         """Retrive the string within the associated tk.Entry."""
+        return self.entry.get()
+        
+    def disable(self):
+        self.disabled = True
+        self.entry.config(state='disabled')
+    
+    def enable(self):
+        self.disabled = False
+        self.entry.config(state='normal')
         
         return self.entry.get()
     
@@ -196,7 +207,7 @@ class MapField(Field):
         
     def open_rm(self):
         self.rm = RoomMapper(self)
-        
+        self.rm.connect(self.entry)
         
 class RoomMapper(tk.Toplevel):
 
@@ -234,7 +245,11 @@ class RoomMapper(tk.Toplevel):
         self.mouse_position = self.getMousePos()
         
         self.selected_room = None
-        
+        self.last_selected_postion = [1,1]
+        self.bind('<Left>', self._select_arrowkeys)
+        self.bind('<Right>', self._select_arrowkeys)
+        self.bind('<Up>', self._select_arrowkeys)
+        self.bind('<Down>', self._select_arrowkeys)
         # Room info panel
         
         self.grid_columnconfigure(1, weight=1)
@@ -282,8 +297,15 @@ class RoomMapper(tk.Toplevel):
         self.i_eWest.grid(row=5, column=0)  
         self.fields.append(self.i_eWest)
         
+        self.i_coords = EntryField(
+            self.i_panel,
+            value_name = 'Coords')
+        self.i_coords.disable()
+        self.i_coords.grid(row=6, column=0)
+        self.fields.append(self.i_coords)
+        
         self.i_save = tk.Button(self.i_panel, text='Save', command=self.save_selected)
-        self.i_save.grid(row=6, column=0)
+        self.i_save.grid(row=7, column=0)
         
         
         # stat Display
@@ -310,7 +332,31 @@ class RoomMapper(tk.Toplevel):
             textvariable=self.text_canvasDim_var, bg='black', fg='white')
         self.text_canvasDim.grid(row=3, column=0, stick='w')
         self._update_info()
+        
+        # Start polling
+        self.pollSet()
 
+    def _select_arrowkeys(self, event):
+        kn = event.keycode
+        pos = self.last_selected_postion
+        boxwidth = self.grid_size
+        if kn == 38:
+            x = pos[0]
+            y = pos[1] - boxwidth
+            self.select([x,y])
+        elif kn == 40:
+            x = pos[0]
+            y = pos[1] + boxwidth
+            self.select([x,y])
+        elif kn == 37:
+            x = pos[0] - boxwidth
+            y = pos[1]
+            self.select([x, y])
+        elif kn == 39:
+            x = pos[0] + boxwidth
+            y = pos[1]
+            self.select([x, y])
+        self.last_selected_postion = [x,y]
         
     def _update_info(self):
         self.text_gridsize_var.set('Gridsize: %s' % self.grid_size)
@@ -331,7 +377,7 @@ class RoomMapper(tk.Toplevel):
         
         new_width = step*2
         new_height = step*2
-        
+                
         if not new_grid_size <= 0:
             new_width = self.width + step * direction
             new_height = new_width
@@ -362,6 +408,7 @@ class RoomMapper(tk.Toplevel):
             self.config(cursor='arrow')
         else:
             self.select([event.x,event.y])
+            self.last_selected_postion = [event.x, event.y]
             
         if self.stopcode_checkMove != None:
             self.after_cancel(self.stopcode_checkMove)
@@ -419,10 +466,10 @@ class RoomMapper(tk.Toplevel):
         del(self.bpoints)
         self.bpoints = []
         
-        for x in range(self.width):
-            if x % size == 0:
-                for y in range(self.height):
-                    if y % size == 0:
+        for y in range(self.height):
+            if y % size == 0:
+                for x in range(self.width):
+                    if x % size == 0:
                         self.bpoints.append([x,y, x+size, y+size])
   
     def remove_unsaved(self):
@@ -452,6 +499,9 @@ class RoomMapper(tk.Toplevel):
         w = self.i_eWest.getValue()
         
         self.selected_room.setExits(n=n, s=s, e=e, w=w)
+        
+        # Assign coords
+        self.selected_room.setCoords(self.i_coords.getValue())
         self.selected_room.save()
     
     def load_selected(self):
@@ -512,10 +562,15 @@ class RoomMapper(tk.Toplevel):
                 roombox = RoomBox(self.canvas, selected, id, self.grid_size)
                 self.boxes.append(roombox)
             
+            pos = self.getCoordsByID(id)
+            self.i_coords.enable()
+            self.i_coords.set(pos)
+            self.i_coords.disable()
+            
             roombox.select()
             self.selected_room = roombox
             self.load_selected()
-     
+    
     def getMousePos(self):
         x = self.winfo_pointerx() - self.winfo_rootx()
         y = self.winfo_pointery() - self.winfo_rooty()
@@ -523,7 +578,49 @@ class RoomMapper(tk.Toplevel):
         
     def connect(self, entry):
         self.connected = entry
+
+    def getCoordsByID(self, id):
+        n = len(self.bpoints)
+        wh = self.zoom_step
+
+        sx = ix = -(wh / 2)
+        iy = ix * -1
         
+        coords = [0,0]
+        
+        for i in range(n):
+            if i != 0 and i % wh == 0:
+                ix = sx
+                iy -= 1
+            if i == id:
+                return [ix, iy]
+            ix += 1
+        
+    def getIdByCoords(self, coords):
+        n = len(self.bpoints)
+        wh = self.zoom_step
+
+        sx = ix = -(wh / 2)
+        iy = ix * -1
+        
+        coords = [0,0]
+        
+        for i in range(n):
+            if i != 0 and i % wh == 0:
+                ix = sx
+                iy -= 1
+            if [ix, iy] == coords:
+                return i
+            ix += 1
+           
+    def pollSet(self):
+        self.set()
+        self.stopcode_set = self.after(500, self.pollSet)
+            
+    def set(self):
+        for box in self.boxes:
+            pass # AGENDA, HANDLE LIST VALUES WITH LISTS IN THEM
+    
         
 class RoomBox(object):
     def __init__(self, canvas, bPoint, id, size=20, fill='blue', outline='red'):
@@ -578,6 +675,9 @@ class RoomBox(object):
     def getID(self):
         return self.id
     
+    def getCoords(self):
+        return self.coords
+    
     def getSize(self):
         return self.size
     
@@ -586,6 +686,9 @@ class RoomBox(object):
     
     def getExits(self):
         return self.exits
+    
+    def setCoords(self, coords):
+        self.coords = coords
     
     def setFill(self, color):
         self.canvas.itemconfig(self.rec, fill=color)

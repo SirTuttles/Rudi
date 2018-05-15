@@ -18,5 +18,6 @@ Just wandered into the void.,template enemy|c|Indeed you have! And now you die!
 Okay?,]
 type = conversation
 subtype = general
+void = [100, [500, 200], 300]
 
 

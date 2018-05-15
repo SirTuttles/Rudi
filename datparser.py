@@ -87,6 +87,8 @@ class DatParser(object):
             elif whole_value[i] == delim_close:
                 vals.append(whole_value[iroot:i])
         vals = [val.strip() for val in vals]
+ 
+        
         return vals
     
     def getDatNames(self):
