@@ -1,9 +1,0 @@
-[template general conversation]
-type = conversation
-subtype = general
-actor = [template friendly]
-desc = ignore
-convobits = [template friendly::I'm friendly actor 1!,
-template friendly::I'm friendly actor 2!,
-template friendly::And I'm friendly actor 3!]
-

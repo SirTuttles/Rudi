@@ -1,7 +1,0 @@
-[poisoned]
-type = effect
-health = -1
-rate = 1.0
-duration = 10.0
-
-
