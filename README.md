@@ -1,2 +1,2 @@
 # Rudi
-Rudi is a "rudi-mentary" game making tool-kit I've been building as a Python &amp; general programming learning experience. The goal isn't to make the next big thing in game engine history, but to simply force me to try and tackle a project with at least some success, as well as learn as much as possible in the process. While I would be thrilled to have somebody fork this and make improvements, the only real purpose I've decided to upload this to GitHub is to get experience with the basic workflow of Git.
+A rudimentary text adventure toolkit written in Python.
