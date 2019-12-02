@@ -10,17 +10,17 @@ Text-based RPG engine written in Python 3
     * [ ] Edit attributes of game objects
 * [ ] Audio
     * [ ] Read audio files (format?)
-    * [ ] Trigger Sound Effects
+    * [ ] Trigger sound effects
     * [ ] Loopable music
-* [ ] Visualization of Environment
+* [ ] Visualization of environment
     * [ ] Backdrops
 * [ ] Sprites
-* [ ] Animated Sprites
-* [ ] Viewable Player Map
-* [ ] Battle System
-* [ ] Dialogue System
+* [ ] Animated sprites
+* [ ] Viewable player map
+* [ ] Battle system
+* [ ] Dialogue system
     * [ ] Choices
-    * [ ] Aysynchronous blurbs
-* [ ] Command Interface
-    * [ ] Define command for particular action
+    * [ ] Asynchronous blurbs
+* [ ] Command interface
+    * [ ] Quickly define command for particular action
 
